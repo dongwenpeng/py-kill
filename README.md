@@ -37,7 +37,7 @@ Python 3.6 编写，主要是弥补 pt-kill 工具貌似不支持 SQL 进程状�
 `--match-user`：指定要匹配的 user，对应 show processlist 中 user 字段
 `--version, -v`：查看程序版本
 
-参考：
+参考：https://www.percona.com/doc/percona-toolkit/LATEST/pt-kill.html
 
 #### 使用方式：
 
@@ -59,21 +59,8 @@ Python 3.6 编写，主要是弥补 pt-kill 工具貌似不支持 SQL 进程状�
 --smtp_port= 25 \
 --to_addr='test@163.com'```
 
-多实例：
 
-```python3 py-kill.py \
---instance='172.16.10.10:3306:root:123456' \
---instance='172.16.10.11:3306:root:123456' \
---match-command='query|execute' \
---match-info='^select' \
---interval=1 \
---busy-time=60 \
---victims='all' \
---print \
---from_addr='test@163.com' \
---from_pass='123456' \
---smtp_server='mail.163.com' \
---smtp_port= 25 \
---to_addr='test@163.com'```
+
+
 
 
