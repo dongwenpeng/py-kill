@@ -12,7 +12,9 @@ Python 3.6 编写，主要是弥补 pt-kill 工具貌似不支持 SQL 进程状�
 #### 选项：
 
 `--host, -H`：指定连接 MySQL 的地址
+
 `--port, -P`：指定连接 MySQL 的端口
+
 `--user, -u`：指定连接 MySQL 的用户
 `--password, -p`：指定连接 MySQL 的用户密码
 `--instance, -instance`：有多个实例时，可以使用此选项，默认用冒号分隔，比如"172.18.16.10:3306:root:123456"
@@ -42,8 +44,8 @@ Python 3.6 编写，主要是弥补 pt-kill 工具貌似不支持 SQL 进程状�
 #### 使用方式：
 
 单实例：
-
-```python3 py-kill.py \
+```
+$ python3 py-kill.py \
 --instance='172.16.10.10:3306' \
 --user=root \
 --password='123456' \
@@ -57,10 +59,26 @@ Python 3.6 编写，主要是弥补 pt-kill 工具貌似不支持 SQL 进程状�
 --from_pass='123456' \
 --smtp_server='mail.163.com' \
 --smtp_port= 25 \
---to_addr='test@163.com'```
+--to_addr='test@163.com'
+```
 
+多实例：
 
-
-
+```
+$ python3 py-kill.py \
+--instance='172.16.10.10:3306:root:123456' \
+--instance='172.16.10.11:3306:root:123456' \
+--match-command='query|execute' \
+--match-info='^select' \
+--interval=1 \
+--busy-time=60 \
+--victims='all' \
+--print \
+--from_addr='test@163.com' \
+--from_pass='123456' \
+--smtp_server='mail.163.com' \
+--smtp_port= 25 \
+--to_addr='test@163.com'
+```
 
 
