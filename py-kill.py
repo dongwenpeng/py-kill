@@ -31,7 +31,7 @@ def usage():
     parser.add_argument("--port", "-P", dest="port", action="store", type=int,
                         help="Port for connecting mysql")
 
-    parser.add_argument('--instance', dest='instance', action='append', default=[],
+    parser.add_argument('--instance', "-instance", dest='instance', action='append', default=[],
                         help='Instance HOST:PORT:USER:PASSWORD for connecting '
                              'mysql (default [])')
 
@@ -53,7 +53,7 @@ def usage():
     parser.add_argument("--to_addr", "-to_addr", dest="to_addr", action="store",
                         help="Set recipient addresses")
 
-    parser.add_argument('--split', dest='split', action='store',
+    parser.add_argument('--split', "-split", dest='split', action='store',
                         help='Instance parameter separator (default :)')
 
     parser.add_argument("--log", "-l", dest="log", action="store",
@@ -63,14 +63,14 @@ def usage():
                         default=False, help="Fork to the background and detach "
                                             "from the shell (default false)")
 
-    exclusive_group.add_argument("--print", dest="print", action="store_true",
+    exclusive_group.add_argument("--print", "-print", dest="print", action="store_true",
                         default=False, help="Print a KILL statement for matching "
                                             "queries (default false)")
 
     parser.add_argument("--interval", "-i", dest="interval", action="store", type=int,
                         default=1, help="How often to check for queries to kill (default 1)")
 
-    parser.add_argument("--busy-time", dest="busytime", action="store", type=int, default=1,
+    parser.add_argument("--busy-time", "-bt", dest="busytime", action="store", type=int, default=1,
                         help="Match queries that have been running for longer than"
                              " this time (default 1)")
 
@@ -183,10 +183,6 @@ def usage():
         sys.exit()
 
     if options.daemonize is True and options.log is None:
-        parser.error("The --daemonize and --log options must exist simultaneously")
-        sys.exit()
-
-    if options.daemonize is False and options.log is not None:
         parser.error("The --daemonize and --log options must exist simultaneously")
         sys.exit()
 
@@ -443,7 +439,7 @@ def sendmail(from_addr, from_pass, smtp_server,
     if to_addr is not None:
         msg = MIMEText(
             '<html><body>'
-            '<h3>有以下SQL超时被终止，请确认影响</h3>'
+            '<h3>有以下SQL因超时被终止，请确认！！！</h3>'
             '<table border="1">'
             '<tr><th>连接地址</th><th>库名</th><th>用户名</th><th>状态</th><th>时间</th><th>SQL</th></tr>'
             '<tr><td>{}:{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>'.format(
@@ -458,7 +454,7 @@ def sendmail(from_addr, from_pass, smtp_server,
 
         msg['From'] = from_addr
         msg['To'] = to_addr
-        msg['Subject'] = Header('超时SQL被终止 FROM ', 'utf-8').encode()
+        msg['Subject'] = Header('超时SQL被终止 FROM {}:{}'.format(ip, port), 'utf-8').encode()
 
         server.sendmail(from_addr, to_addr.split(','), msg.as_string())
         server.quit()
@@ -483,8 +479,8 @@ def main():
     statement = sqlformat(options)
     signal.signal(signal.SIGINT, sigint_handler)
 
-    logging.basicConfig(filename=options.log, \
-                        format='%(asctime)s %(levelname)s %(message)s', \
+    logging.basicConfig(filename=options.log,
+                        format='%(asctime)s %(levelname)s %(message)s',
                         level=logging.INFO)
 
     conn = []
