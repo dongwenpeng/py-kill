@@ -11,8 +11,6 @@ import sys, os, time, signal, re
 from email.header import Header
 from email.mime.text import MIMEText
 
-lock = threading.Lock()
-
 def usage():
     "Print usage and parse input variables"
 
@@ -247,7 +245,9 @@ class Daemon:
 
 
 class DatabaseConn:
-    def __init__(self, ip=None, user=None, password=None, db=None, port=None, charset='utf8mb4'):
+    def __init__(self, ip=None, user=None,
+                 password=None, db=None, port=None,
+                 charset='utf8mb4'):
         self.ip = ip
         self.user = user
         self.password = password
@@ -298,7 +298,6 @@ class SqlCheckThread(threading.Thread):
 
 def sqlkill(statement, ip, port, user, password, options):
     while True:
-        lock.acquire()
         try:
             # t = time.time()
             with DatabaseConn(
@@ -310,48 +309,49 @@ def sqlkill(statement, ip, port, user, password, options):
                 result = curosr.select_execute(sql=statement)
             # ts = time.time() - t
 
+            if len(result) == 0 or result[0][0] is None:
+                continue
+
             if options.kill is not True:
                 for s in result:
-                    if s[0] is not None:
-                        logging.info("%s:%s Print %s %s %s (%s %s sec): %s", \
-                                     ip, port, s[0], s[1], s[2], s[3], s[4], s[5])
+                    logging.info("%s:%s Print %s %s %s (%s %s sec): %s", \
+                                 ip, port, s[0], s[1], s[2], s[3], s[4], s[5])
 
-                        if options.mail:
-                            sendmail(from_addr=options.from_addr,
-                                     from_pass=options.from_pass,
-                                     to_addr=options.to_addr,
-                                     smtp_server=options.smtp_server,
-                                     smtp_port=options.smtp_port,
-                                     ip=ip,
-                                     port=port,
-                                     info=s)
+                    if options.mail:
+                        sendmail(from_addr=options.from_addr,
+                                 from_pass=options.from_pass,
+                                 to_addr=options.to_addr,
+                                 smtp_server=options.smtp_server,
+                                 smtp_port=options.smtp_port,
+                                 ip=ip,
+                                 port=port,
+                                 info=s)
             else:
                 for s in result:
-                    if s[0] is not None:
-                        with DatabaseConn(
-                                ip=ip,
-                                port=port,
-                                user=user,
-                                password=password,
-                        ) as curosr:
-                            curosr.select_execute(sql="kill %s" % int(s[0]))
+                    with DatabaseConn(
+                            ip=ip,
+                            port=port,
+                            user=user,
+                            password=password,
+                    ) as curosr:
+                        curosr.select_execute(sql="kill %s" % int(s[0]))
 
-                        logging.info("%s:%s KILL %s %s %s (%s %s sec): %s", \
-                                     ip, port, s[0], s[1], s[2], s[3], s[4], s[5])
+                    logging.info("%s:%s KILL %s %s %s (%s %s sec): %s", \
+                                 ip, port, s[0], s[1], s[2], s[3], s[4], s[5])
 
-                        if options.mail:
-                            sendmail(from_addr=options.from_addr,
-                                     from_pass=options.from_pass,
-                                     to_addr=options.to_addr,
-                                     smtp_server=options.smtp_server,
-                                     smtp_port=options.smtp_port,
-                                     ip=ip,
-                                     port=port,
-                                     info=s)
+                    if options.mail:
+                        sendmail(from_addr=options.from_addr,
+                                 from_pass=options.from_pass,
+                                 to_addr=options.to_addr,
+                                 smtp_server=options.smtp_server,
+                                 smtp_port=options.smtp_port,
+                                 ip=ip,
+                                 port=port,
+                                 info=s)
         except Exception as e:
-            logging.error(e)
+            message = '{} {} {}'.format(ip, port, e)
+            logging.error(message)
         finally:
-            lock.release()
             time.sleep(options.interval)
 
 def loop(statement, conn, options):
@@ -402,7 +402,7 @@ def sqlformat(options):
     elif options.victims == 'all':
         time = 'TIME'
     else:
-        parser.error("The --victims option value is not valid")
+        print("The --victims option value is not valid")
         sys.exit()
 
     statement = " \
@@ -410,7 +410,9 @@ def sqlformat(options):
         from information_schema.processlist where \
         TIME >= %d \
         %s" % (time, options.busytime, _sql)
-    # print(statement)
+
+    logging.info(statement)
+
     return statement
 
 
@@ -476,12 +478,12 @@ def main():
                  smtp_server=options.smtp_server,
                  smtp_port=options.smtp_port)
 
-    statement = sqlformat(options)
-    signal.signal(signal.SIGINT, sigint_handler)
-
     logging.basicConfig(filename=options.log,
                         format='%(asctime)s %(levelname)s %(message)s',
                         level=logging.INFO)
+
+    statement = sqlformat(options)
+    signal.signal(signal.SIGINT, sigint_handler)
 
     conn = []
 
